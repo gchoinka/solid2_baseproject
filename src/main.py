@@ -1,51 +1,28 @@
-import math  # noqa
-import multiprocessing
 import os
 import shutil
 import sys
 from typing import Iterable, Tuple, Dict, List
 
-from solid2 import cube, linear_extrude, polygon, cylinder, hull, scale, intersection
+from solid2 import cube, linear_extrude, polygon, cylinder, hull, scale, intersection, P3
 from solid2.core.object_base import OpenSCADObject
-from pathlib import Path
+from solid2_utils.utils import save_to_str_scad, StlTask
 
+verbose = False
 unprintable_thickness = 0.01
 preview_fix = 0.05
 
-
-def cube_example() -> OpenSCADObject:
-    return cube()
+pipe_r = 8 / 2
 
 
-def stl_task_function(stl_task: Tuple[OpenSCADObject, str]) -> None:
-    obj, filename = stl_task
-    obj.save_as_stl(filename)
+def cube_example() -> Tuple[OpenSCADObject, P3]:
+    return cube(1), (0, 0, 0)
 
 
 def main(output_scad_basename, output_stl_basename):
-    output = [
+    output: List[StlTask] = [
         (cube_example(), "cube_example"),
     ]
-
-    stl_task: List[Tuple[OpenSCADObject, str]] = []
-    all_obj: OpenSCADObject = cube()
-    obj_distance = 45
-    next_pos = [obj_distance, obj_distance]
-
-    for obj, filename_prefix in output:
-        filename = output_scad_basename + filename_prefix + ".scad"
-        stl_task.append((obj, output_scad_basename + filename_prefix + ".stl"))
-        obj.save_as_scad(filename)
-        all_obj += obj.left(next_pos[0]).fwd(next_pos[1])
-        next_pos[0] += obj_distance
-        next_pos[1] += obj_distance
-
-    filename = output_scad_basename + f"{Path(__file__).stem}_all.scad"
-    all_obj.save_as_scad(filename)
-    stl_task.append((all_obj, output_scad_basename + f"{Path(__file__).stem}_all.stl"))
-    if output_stl_basename is not None:
-        with multiprocessing.Pool() as pool:
-            pool.map(stl_task_function, stl_task)
+    save_to_str_scad(output_scad_basename, output_stl_basename, output, verbose)
 
 
 if __name__ == "__main__":
